@@ -14,7 +14,7 @@
 // get updates
 // draw players, objects, world. 
 
-
+#include <cmath>
 #include <iostream>
 #include <raylib.h>
 using namespace std;
@@ -26,6 +26,58 @@ void log(string msg){
 struct WorldRect {
     float left, right, top, bottom;
 };
+
+string get_tile(float raw_x, float raw_y, const string& rail_map, const string& world_map, int tile_scale){
+    static Texture2D rail = LoadTexture("resources/images/item/rail/rail.png");
+    int tile_width = rail.width * tile_scale;
+    int tile_height = rail.height * tile_scale;
+
+    int column = static_cast<int>(std::floor(raw_x)) / tile_width - 1;
+    int row = static_cast<int>(std::floor(raw_y)) / tile_height;
+    if (column < 0 || row < 0){
+        return "border";
+    }
+
+    auto get_map_tile = [](const string& map, int column, int row) -> char {
+        size_t line_start = 0;
+        for (int current_row = 0; current_row < row; ++current_row){
+            size_t newline = map.find('\n', line_start);
+            if (newline == string::npos){
+                return '\n';
+            }
+            line_start = newline + 1;
+        }
+
+        size_t index = line_start + static_cast<size_t>(column);
+        if (index >= map.length() || map[index] == '\n'){
+            return '\n';
+        }
+        return map[index];
+    };
+
+    char rail_tile = get_map_tile(rail_map, column, row);
+    if (rail_tile == '='){
+        return "rail";
+    }
+
+    char world_tile = get_map_tile(world_map, column, row);
+    if (rail_tile == '\n' || world_tile == '\n'){
+        return "border";
+    }
+    if (world_tile == '#'){
+        return "grass";
+    }
+    if (world_tile == '%'){
+        return "sand";
+    }
+    if (world_tile == '@'){
+        return "rock";
+    }
+    if (world_tile == ' '){
+        return "ocean";
+    }
+    return "border";
+}
 
 WorldRect GetCameraWorldBounds(const Camera2D& camera, int screenWidth, int screenHeight) {
     // Handle rotation safely by checking all 4 screen corners
@@ -56,6 +108,17 @@ bool IsInView(const WorldRect& view, float x, float y, float width, float height
            (y - margin <= view.bottom);
 }
 
+/*  
+   █████████  ████                                            
+  ███░░░░░███░░███                                            
+ ███     ░░░  ░███   ██████    █████   █████   ██████   █████ 
+░███          ░███  ░░░░░███  ███░░   ███░░   ███░░███ ███░░  
+░███          ░███   ███████ ░░█████ ░░█████ ░███████ ░░█████ 
+░░███     ███ ░███  ███░░███  ░░░░███ ░░░░███░███░░░   ░░░░███
+ ░░█████████  █████░░████████ ██████  ██████ ░░██████  ██████ 
+  ░░░░░░░░░  ░░░░░  ░░░░░░░░ ░░░░░░  ░░░░░░   ░░░░░░  ░░░░░░  
+                                                              
+                                                         */
 
 class terrain {
     public:
@@ -222,6 +285,19 @@ class player {
 
 
 
+/* 
+ ██████   ██████            ███            
+░░██████ ██████            ░░░             
+ ░███░█████░███   ██████   ████  ████████  
+ ░███░░███ ░███  ░░░░░███ ░░███ ░░███░░███ 
+ ░███ ░░░  ░███   ███████  ░███  ░███ ░███ 
+ ░███      ░███  ███░░███  ░███  ░███ ░███ 
+ █████     █████░░████████ █████ ████ █████
+░░░░░     ░░░░░  ░░░░░░░░ ░░░░░ ░░░░ ░░░░░ 
+*/
+
+
+
 int main () {
 
     int SCREEN_WIDTH = 1280;
@@ -367,6 +443,9 @@ int main () {
 
         camera.target = Vector2{local_player.get_location_x(), local_player.get_location_y()}; // set the camera target to the player's location
         EndMode2D();
+        float player_center_x = local_player.get_location_x() + (16.0f * 5.0f / 2.0f);
+        float player_center_y = local_player.get_location_y() + (16.0f * 5.0f / 2.0f);
+        DrawText(get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale).c_str(), 20, 20, 10, WHITE); 
         EndDrawing();
     }
 
