@@ -157,13 +157,33 @@ class terrain {
 
 class railway {
     public:
-        void draw_rail(float x, float y){
+        void draw_rail(float x, float y, char tile){
             static Texture2D rail_ns = LoadTexture("resources/images/item/rail/rail_ns.png");
-            static Texture2D rail_ws = LoadTexture("resources/images/item/rail/rail_ws.png");
-            static Texture2D rail_ne = LoadTexture("resources/images/item/rail/rail_ne.png");
             static Texture2D rail_ew = LoadTexture("resources/images/item/rail/rail_ew.png");
+            static Texture2D rail_ne = LoadTexture("resources/images/item/rail/rail_ne.png");
+            static Texture2D rail_nw = LoadTexture("resources/images/item/rail/rail_nw.png");
+            static Texture2D rail_sw = LoadTexture("resources/images/item/rail/rail_sw.png");
+            static Texture2D rail_se = LoadTexture("resources/images/item/rail/rail_se.png");
             static int tile_scale = 5;
-            DrawTexturePro(rail_ns, { 0.0f, 0.0f, (float)rail_ns.width, (float)rail_ns.height }, Rectangle { x, y, (float)rail_ns.width*tile_scale, (float)rail_ns.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            if (tile == '|'){
+                DrawTexturePro(rail_ns, { 0.0f, 0.0f, (float)rail_ns.width, (float)rail_ns.height }, Rectangle { x, y, (float)rail_ns.width*tile_scale, (float)rail_ns.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            }
+            if (tile == '='){
+                DrawTexturePro(rail_ew, { 0.0f, 0.0f, (float)rail_ew.width, (float)rail_ew.height }, Rectangle { x, y, (float)rail_ew.width*tile_scale, (float)rail_ew.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            }
+            if (tile == '\\'){
+                DrawTexturePro(rail_ne, { 0.0f, 0.0f, (float)rail_ne.width, (float)rail_ne.height }, Rectangle { x, y, (float)rail_ne.width*tile_scale, (float)rail_ne.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            }
+            if (tile == '/'){
+                DrawTexturePro(rail_nw, { 0.0f, 0.0f, (float)rail_nw.width, (float)rail_nw.height }, Rectangle { x, y, (float)rail_nw.width*tile_scale, (float)rail_nw.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            }
+            if (tile == '>'){
+                DrawTexturePro(rail_sw, { 0.0f, 0.0f, (float)rail_sw.width, (float)rail_sw.height }, Rectangle { x, y, (float)rail_sw.width*tile_scale, (float)rail_sw.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            }
+            if (tile == '|'){
+                DrawTexturePro(rail_se, { 0.0f, 0.0f, (float)rail_se.width, (float)rail_se.height }, Rectangle { x, y, (float)rail_se.width*tile_scale, (float)rail_se.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            }
+            
         }
 };
 
@@ -403,11 +423,12 @@ int main () {
         location_x = 0.0f;
         location_y = 0.0f;
         for (size_t i = 0; i < rail_map.length(); ++i) {
-
-            if (rail_map[i] == '='){
+            
+            // TODO: add check for invalid chars
+            if (rail_map[i] == '|' or rail_map[i] == '=' or rail_map[i] == '\\' or rail_map[i] == '/' or rail_map[i] == '>' or rail_map[i] == '<'){
                 location_x += rail.width * tile_scale;
                 if (IsInView(view, location_x, location_y, rail.width * tile_scale, rail.height * tile_scale, 32.0f)) {
-                    local_railway.draw_rail(location_x, location_y);
+                    local_railway.draw_rail(location_x, location_y, i);
                 }
             }
             if (rail_map[i] == '\n'){

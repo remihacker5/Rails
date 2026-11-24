@@ -7,12 +7,7 @@ import urllib.parse
 import urllib.request
 
 NO_TRAIL = " "
-TRAIL_NS = "|"
-TRAIL_NE = "\\"
-TRAIL_NW = "/"
-TRAIL_EW = "="
-TRAIL_SE = ">"
-TRAIL_SW = "<"
+TRAIL = "="
 
 # Approximate bounding box around Leeds (south, west, north, east)
 LEEDS_BBOX = (53.72, -1.72, 53.88, -1.38)
@@ -31,7 +26,7 @@ OVERPASS_URLS = [
 
 def fetch_leeds_rail_ways(
     bbox: tuple[float, float, float, float] = LEEDS_BBOX,
-    cache_file: str = "leeds_rail_cache_v2.json",
+    cache_file: str = "leeds_rail_cache.json",
     timeout: int = 60,
     retries_per_url: int = 2,
 ) -> list[list[tuple[float, float]]]:
@@ -43,7 +38,7 @@ def fetch_leeds_rail_ways(
         query = f"""
         [out:json][timeout:45];
         (
-          way["railway"="rail"]["service"!~"yard|siding"]({south},{west},{north},{east});
+          way["railway"="rail"]["service"!~"yard|siding|spur|crossover"]({south},{west},{north},{east});
         );
         out geom;
         """
@@ -86,48 +81,105 @@ def fetch_leeds_rail_ways(
     return lines
 
 
-def draw_line_1px(grid: list[list[str]], x0: int, y0: int, x1: int, y1: int) -> None:
-    """Rasterize a line with directional symbols and 2-char diagonal corners (\\> and </)."""
-    height = len(grid)
-    width = len(grid[0]) if height else 0
+def _orthogonal_neighbors(
+    has_trail: list[list[bool]], x: int, y: int
+) -> list[tuple[int, int]]:
+    height = len(has_trail)
+    width = len(has_trail[0]) if height else 0
+    neighbors: list[tuple[int, int]] = []
+    for nx, ny in ((x, y - 1), (x + 1, y), (x, y + 1), (x - 1, y)):
+        if 0 <= nx < width and 0 <= ny < height and has_trail[ny][nx]:
+            neighbors.append((nx, ny))
+    return neighbors
 
-    def put(px: int, py: int, ch: str) -> None:
-        if 0 <= px < width and 0 <= py < height:
-            grid[py][px] = ch
+
+def _can_place_trail(has_trail: list[list[bool]], x: int, y: int) -> bool:
+    """Return True if placing a trail at (x, y) keeps every cell's N/E/S/W degree <= 2."""
+    if has_trail[y][x]:
+        return True
+
+    neighbors = _orthogonal_neighbors(has_trail, x, y)
+    if len(neighbors) > 2:
+        return False
+
+    for nx, ny in neighbors:
+        if len(_orthogonal_neighbors(has_trail, nx, ny)) >= 2:
+            return False
+
+    return True
+
+
+def draw_line_1px(has_trail: list[list[bool]], x0: int, y0: int, x1: int, y1: int) -> None:
+    """4-connected line rasterizer enforcing <= 2 orthogonal neighbors per trail cell."""
+    height = len(has_trail)
+    width = len(has_trail[0]) if height else 0
 
     dx = abs(x1 - x0)
-    dy = -abs(y1 - y0)
+    dy = abs(y1 - y0)
     sx = 1 if x0 < x1 else -1
     sy = 1 if y0 < y1 else -1
-    err = dx + dy
+    err = 0
 
-    if 0 <= x0 < width and 0 <= y0 < height and grid[y0][x0] == NO_TRAIL:
-        put(x0, y0, TRAIL_NS if abs(y1 - y0) >= dx else TRAIL_EW)
+    while True:
+        if 0 <= x0 < width and 0 <= y0 < height:
+            if _can_place_trail(has_trail, x0, y0):
+                has_trail[y0][x0] = True
+        if x0 == x1 and y0 == y1:
+            break
 
-    while x0 != x1 or y0 != y1:
-        px, py = x0, y0
-        e2 = 2 * err
-        step_x = e2 >= dy
-        step_y = e2 <= dx
-        if step_x:
+        if x0 == x1:
+            y0 += sy
+        elif y0 == y1:
+            x0 += sx
+        elif abs(err + dy) <= abs(err - dx):
             err += dy
             x0 += sx
-        if step_y:
-            err += dx
+        else:
+            err -= dx
             y0 += sy
 
-        if step_x and step_y:
-            # Diagonal step: bridge (px, py) -> (x0, y0) with \> or </ on row y0
-            if sx == sy:
-                put(min(px, x0), y0, TRAIL_NE)
-                put(max(px, x0), y0, TRAIL_SE)
-            else:
-                put(min(px, x0), y0, TRAIL_SW)
-                put(max(px, x0), y0, TRAIL_NW)
-        elif step_x:
-            put(x0, y0, TRAIL_EW)
-        elif step_y:
-            put(x0, y0, TRAIL_NS)
+
+def _trail_char_for_cell(has_trail: list[list[bool]], x: int, y: int) -> str:
+    height = len(has_trail)
+    width = len(has_trail[0]) if height else 0
+
+    n = y > 0 and has_trail[y - 1][x]
+    e = x < width - 1 and has_trail[y][x + 1]
+    s = y < height - 1 and has_trail[y + 1][x]
+    w = x > 0 and has_trail[y][x - 1]
+
+    if n and e:
+        return "\\"
+    if n and w:
+        return "/"
+    if s and w:
+        return ">"
+    if s and e:
+        return "<"
+    if n and s:
+        return "|"
+    if w and e:
+        return "="
+
+    # Endpoints (1 neighbor) or isolated cells (0 neighbors)
+    if n or s:
+        return "|"
+    if w or e:
+        return "="
+    return TRAIL
+
+
+def render_trail_grid(has_trail: list[list[bool]]) -> list[list[str]]:
+    height = len(has_trail)
+    width = len(has_trail[0]) if height else 0
+    grid = [[NO_TRAIL for _ in range(width)] for _ in range(height)]
+
+    for y in range(height):
+        for x in range(width):
+            if has_trail[y][x]:
+                grid[y][x] = _trail_char_for_cell(has_trail, x, y)
+
+    return grid
 
 
 def generate_leeds_rail_map(
@@ -146,7 +198,7 @@ def generate_leeds_rail_map(
     lat_span = max(1e-6, north - south)
     lon_span = max(1e-6, (east - west) * cos_lat)
 
-    grid = [[NO_TRAIL for _ in range(width)] for _ in range(height)]
+    has_trail = [[False for _ in range(width)] for _ in range(height)]
 
     def to_grid(lat: float, lon: float) -> tuple[int, int]:
         gx = ((lon - west) * cos_lat) / lon_span * (width - 1)
@@ -158,7 +210,9 @@ def generate_leeds_rail_map(
         for i in range(len(coords) - 1):
             x0, y0 = to_grid(coords[i][0], coords[i][1])
             x1, y1 = to_grid(coords[i + 1][0], coords[i + 1][1])
-            draw_line_1px(grid, x0, y0, x1, y1)
+            draw_line_1px(has_trail, x0, y0, x1, y1)
+
+    grid = render_trail_grid(has_trail)
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write("\n".join("".join(row) for row in grid) + "\n")
