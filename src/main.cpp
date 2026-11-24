@@ -56,7 +56,7 @@ string get_tile(float raw_x, float raw_y, const string& rail_map, const string& 
     };
 
     char rail_tile = get_map_tile(rail_map, column, row);
-    if (rail_tile == '|' || rail_tile == '=' || rail_tile == '\\' || rail_tile == '/' || rail_tile == '>' || rail_tile == '<'){
+    if (rail_tile == '|' || rail_tile == '=' || rail_tile == '\\' || rail_tile == '/' || rail_tile == '>' || rail_tile == '<' || rail_tile == 'I'){
         return "rail";
     }
 
@@ -164,6 +164,7 @@ class railway {
             static Texture2D rail_nw = LoadTexture("resources/images/item/rail/rail_nw.png");
             static Texture2D rail_sw = LoadTexture("resources/images/item/rail/rail_sw.png");
             static Texture2D rail_se = LoadTexture("resources/images/item/rail/rail_se.png");
+            static Texture2D rail_inter = LoadTexture("resources/images/item/rail/rail_inter.png");
             static int tile_scale = 5;
             if (tile == '|'){
                 DrawTexturePro(rail_ns, { 0.0f, 0.0f, (float)rail_ns.width, (float)rail_ns.height }, Rectangle { x, y, (float)rail_ns.width*tile_scale, (float)rail_ns.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
@@ -183,7 +184,9 @@ class railway {
             if (tile == '<'){
                 DrawTexturePro(rail_se, { 0.0f, 0.0f, (float)rail_se.width, (float)rail_se.height }, Rectangle { x, y, (float)rail_se.width*tile_scale, (float)rail_se.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
             }
-            
+            if (tile == 'I'){
+                DrawTexturePro(rail_inter, { 0.0f, 0.0f, (float)rail_inter.width, (float)rail_inter.height }, Rectangle { x, y, (float)rail_inter.width*tile_scale, (float)rail_inter.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            }
         }
 };
 
@@ -440,7 +443,7 @@ int main () {
         for (size_t i = 0; i < rail_map.length(); ++i) {
             
             // TODO: add check for invalid chars
-            if (rail_map[i] == '|' or rail_map[i] == '=' or rail_map[i] == '\\' or rail_map[i] == '/' or rail_map[i] == '>' or rail_map[i] == '<'){
+            if (rail_map[i] == '|' or rail_map[i] == '=' or rail_map[i] == '\\' or rail_map[i] == '/' or rail_map[i] == '>' or rail_map[i] == '<' or rail_map[i] == 'I'){
                 location_x += rail.width * tile_scale;
                 if (IsInView(view, location_x, location_y, rail.width * tile_scale, rail.height * tile_scale, 32.0f)) {
                     local_railway.draw_rail(location_x, location_y, rail_map[i]);
