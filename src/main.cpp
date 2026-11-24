@@ -180,7 +180,7 @@ class railway {
             if (tile == '>'){
                 DrawTexturePro(rail_sw, { 0.0f, 0.0f, (float)rail_sw.width, (float)rail_sw.height }, Rectangle { x, y, (float)rail_sw.width*tile_scale, (float)rail_sw.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
             }
-            if (tile == '|'){
+            if (tile == '<'){
                 DrawTexturePro(rail_se, { 0.0f, 0.0f, (float)rail_se.width, (float)rail_se.height }, Rectangle { x, y, (float)rail_se.width*tile_scale, (float)rail_se.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
             }
             
@@ -428,7 +428,7 @@ int main () {
             if (rail_map[i] == '|' or rail_map[i] == '=' or rail_map[i] == '\\' or rail_map[i] == '/' or rail_map[i] == '>' or rail_map[i] == '<'){
                 location_x += rail.width * tile_scale;
                 if (IsInView(view, location_x, location_y, rail.width * tile_scale, rail.height * tile_scale, 32.0f)) {
-                    local_railway.draw_rail(location_x, location_y, i);
+                    local_railway.draw_rail(location_x, location_y, rail_map[i]);
                 }
             }
             if (rail_map[i] == '\n'){
