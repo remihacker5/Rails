@@ -192,13 +192,14 @@ class railway {
 
 class cart {
     public:
-        float location_x = 0.0f;
-        float location_y = 0.0f;
-
-        void draw_cart(float x, float y){
+        float location_x = 7280.0f;
+        float location_y = 8552.0f;
+        float momentum_x = 0.0f;
+        float momentum_y = 0.0f;
+        void draw_cart(){
             static Texture2D cart = LoadTexture("resources/images/item/cart/cart.png");
             static int tile_scale = 5;
-            DrawTexturePro(cart, { 0.0f, 0.0f, (float)cart.width, (float)cart.height }, Rectangle { x, y, (float)cart.width*tile_scale, (float)cart.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            DrawTexturePro(cart, { 0.0f, 0.0f, (float)cart.width, (float)cart.height }, Rectangle { location_x, location_y, (float)cart.width*tile_scale, (float)cart.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
         }
 };
 
@@ -224,7 +225,7 @@ class player {
             return move_speed_y;
         }
          
-        void play_walking_animation(int direction_x, int direction_y) {
+        void play_walking_animation() {
             
                 // Play the walking animation for the player character to the right
                 static int frames = 0;
@@ -293,20 +294,20 @@ class player {
             if (direction_x > 0) {
                 // Play the walking animation for the player character to the right
                 facing = 1;
-                play_walking_animation(direction_x, direction_y);
+                play_walking_animation();
             }
             if (direction_x < 0) {
                 // Play the walking animation for the player character to the left
                 facing = -1;
-                play_walking_animation(direction_x, direction_y);
+                play_walking_animation();
             }
             if (direction_y > 0) {
                 // Play the walking animation for the player character downwards
-                play_walking_animation(direction_x, direction_y);
+                play_walking_animation();
             }
             if (direction_y < 0) {
                 // Play the walking animation for the player character upwards
-                play_walking_animation(direction_x, direction_y);
+                play_walking_animation();
             }
             if (direction_x == 0 && direction_y == 0){
                 anim_frame = 0;
@@ -368,8 +369,6 @@ int main () {
     terrain local_terrain = terrain();
     railway local_railway = railway();
     cart local_cart = cart();
-    local_cart.location_x = 7280.0f;
-    local_cart.location_y = 8552.0f;
     while (WindowShouldClose() == false){
         // Refresh the screen size and camera target if the window is resized
         if (IsWindowResized()){
@@ -464,7 +463,7 @@ int main () {
 
 
         local_player.draw_player(); // Draw the local player character
-        local_cart.draw_cart(local_cart.location_x, local_cart.location_y); // Draw the cart
+        local_cart.draw_cart(); // Draw the cart
         // Handle player movement based on key inputs
         if (IsKeyDown(KEY_W)) {
             local_player.walk(0, -1);
@@ -496,18 +495,72 @@ int main () {
             local_player.set_location_y(local_cart.location_y);
             if (IsKeyDown(KEY_W) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y - 26, rail_map, world_map, tile_scale) == "rail") {
                 local_cart.location_y -= 5;
+                local_cart.momentum_y = -5;
+                local_cart.momentum_x = 0;
             }
             if (IsKeyDown(KEY_S) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y + 64, rail_map, world_map, tile_scale) == "rail") {
                 local_cart.location_y += 5;
+                local_cart.momentum_y = 5;
+                local_cart.momentum_x = 0;
             }
             if (IsKeyDown(KEY_A) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x - 45, player_center_y, rail_map, world_map, tile_scale) == "rail") {
                 local_cart.location_x -= 5;
+                local_cart.momentum_x = -5;
+                local_cart.momentum_y = 0;
             }
             if (IsKeyDown(KEY_D) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x + 45, player_center_y, rail_map, world_map, tile_scale) == "rail") {
                 local_cart.location_x += 5;
+                local_cart.momentum_x = 5;
+                local_cart.momentum_y = 0;
             }
         }
 
+
+
+
+        // calculate cart momentum
+        if (!(get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x + 45, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x - 45, player_center_y, rail_map, world_map, tile_scale) == "rail")){
+            local_cart.momentum_x = 0;
+        }
+
+        if (!(get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y + 64, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y - 26, rail_map, world_map, tile_scale) == "rail")){
+            
+            local_cart.momentum_y = 0;
+        }
+
+        if (!IsKeyDown(KEY_W) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_S) && !IsKeyDown(KEY_D)){
+
+        
+            if (local_cart.momentum_x > 0){
+                local_cart.momentum_x -= 0.1f;
+                local_cart.location_x += local_cart.momentum_x;
+            
+                if (local_cart.momentum_x < 0){
+                    local_cart.momentum_x = 0;
+                }
+            }
+            if (local_cart.momentum_y > 0){
+                local_cart.momentum_y -= 0.1f;
+                local_cart.location_y += local_cart.momentum_y;
+                if (local_cart.momentum_y < 0){
+                    local_cart.momentum_y = 0;
+                }
+            }
+            if (local_cart.momentum_x < 0){
+                local_cart.momentum_x += 0.1f;
+                local_cart.location_x += local_cart.momentum_x;
+                if (local_cart.momentum_x > 0){
+                    local_cart.momentum_x = 0;
+                }
+            }
+            if (local_cart.momentum_y < 0){
+                local_cart.momentum_y += 0.1f;
+                local_cart.location_y += local_cart.momentum_y;
+                if (local_cart.momentum_y > 0){
+                local_cart.momentum_y = 0;
+                }
+            }
+        }
 
         camera.target = Vector2{local_player.get_location_x(), local_player.get_location_y()}; // set the camera target to the player's location
         EndMode2D();
