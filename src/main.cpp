@@ -158,9 +158,12 @@ class terrain {
 class railway {
     public:
         void draw_rail(float x, float y){
-            static Texture2D rail = LoadTexture("resources/images/item/rail/rail.png");
+            static Texture2D rail_ns = LoadTexture("resources/images/item/rail/rail_ns.png");
+            static Texture2D rail_ws = LoadTexture("resources/images/item/rail/rail_ws.png");
+            static Texture2D rail_ne = LoadTexture("resources/images/item/rail/rail_ne.png");
+            static Texture2D rail_ew = LoadTexture("resources/images/item/rail/rail_ew.png");
             static int tile_scale = 5;
-            DrawTexturePro(rail, { 0.0f, 0.0f, (float)rail.width, (float)rail.height }, Rectangle { x, y, (float)rail.width*tile_scale, (float)rail.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+            DrawTexturePro(rail_ns, { 0.0f, 0.0f, (float)rail_ns.width, (float)rail_ns.height }, Rectangle { x, y, (float)rail_ns.width*tile_scale, (float)rail_ns.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
         }
 };
 
