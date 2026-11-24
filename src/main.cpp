@@ -445,8 +445,6 @@ int main () {
 
 
 
-
-
         local_player.draw_player(); // Draw the local player character
 
         // Handle player movement based on key inputs
