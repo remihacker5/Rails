@@ -482,8 +482,6 @@ int main () {
     SetWindowIcon(LoadImage("resources/images/menu/icon.png"));
     SetTargetFPS(60);
     log("Screen init SUCCESS");
-
-    Texture2D rail = LoadTexture("resources/images/item/rail/rail.png");
     int tile_scale = 5;
     string world_map = LoadFileText("resources/world/map.txt");
     string rail_map = LoadFileText("resources/world/rail_map.txt");
