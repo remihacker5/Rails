@@ -219,5 +219,5 @@ def generate_leeds_rail_map(
 
 
 if __name__ == "__main__":
-    generate_leeds_rail_map(filename="rail_map.txt", width=200, height=200)
+    generate_leeds_rail_map(filename="rail_map.txt", width=1000, height=1000)
     print("Generated rail_map.txt")

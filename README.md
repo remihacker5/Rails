@@ -14,8 +14,8 @@ Rails is a retro style 2D puzzle sandbox game, where you must explore railways, 
 ## 🗺️ Roadmap
 
 <!-- Add planned features and development milestones here. -->
-- Placing and removing rails
-- HUD
+- ~~Placing and removing rails~~
+- HUD and inventory
 - Develop Story
 - NPCs, Structures, objects & entitys
 - Start Menu

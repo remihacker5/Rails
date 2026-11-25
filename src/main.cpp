@@ -17,6 +17,7 @@
 #include <cmath>
 #include <iostream>
 #include <raylib.h>
+#include <vector>
 using namespace std;
 
 void log(string msg){
@@ -217,6 +218,32 @@ bool IsInView(const WorldRect& view, float x, float y, float width, float height
            (y - margin <= view.bottom);
 }
 
+vector<size_t> get_row_starts(const string& map) {
+    vector<size_t> row_starts{0};
+    for (size_t i = 0; i < map.length(); ++i) {
+        if (map[i] == '\n' && i + 1 < map.length()) {
+            row_starts.push_back(i + 1);
+        }
+    }
+    return row_starts;
+}
+
+size_t get_row_end(const string& map, const vector<size_t>& row_starts, size_t row) {
+    size_t row_end = row + 1 < row_starts.size() ? row_starts[row + 1] - 1 : map.length();
+    if (row_end > row_starts[row] && map[row_end - 1] == '\r') {
+        --row_end;
+    }
+    return row_end;
+}
+
+int get_map_width(const string& map, const vector<size_t>& row_starts) {
+    size_t width = 0;
+    for (size_t row = 0; row < row_starts.size(); ++row) {
+        width = max(width, get_row_end(map, row_starts, row) - row_starts[row]);
+    }
+    return static_cast<int>(width);
+}
+
 /*  
    █████████  ████                                            
   ███░░░░░███░░███                                            
@@ -239,6 +266,8 @@ class terrain {
         Texture2D grass4 = LoadTexture("resources/images/terrain/grass/grass4.png");
         int tile_scale = 5;
         string world_map = LoadFileText("resources/world/map.txt");
+        vector<size_t> world_row_starts = get_row_starts(world_map);
+        int world_map_width = get_map_width(world_map, world_row_starts);
         void draw_grass(float x, float y, int randomgrass){
             if (randomgrass == 1){
                 DrawTexturePro(grass1, { 0.0f, 0.0f, (float)grass1.width, (float)grass1.height }, Rectangle { x, y, (float)grass1.width*tile_scale, (float)grass1.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
@@ -259,43 +288,40 @@ class terrain {
         void draw_rock(float x, float y){
             DrawTexturePro(rock, { 0.0f, 0.0f, (float)rock.width, (float)rock.height }, Rectangle { x, y, (float)rock.width*tile_scale, (float)rock.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
         }
-        void draw_terrain(terrain local_terrain, WorldRect view, int randomgrass){
-                    // Draw the world map
-            float location_x = 0.0f;
-            float location_y = 0.0f;
-            for (size_t i = 0; i < world_map.length(); ++i) {
-                randomgrass++;
-                if (randomgrass > 4){
-                    randomgrass = 1;
+        void draw_terrain(WorldRect view, int randomgrass){
+            int tile_width = grass1.width * tile_scale;
+            int tile_height = grass1.height * tile_scale;
+            int first_column = max(0, static_cast<int>(floor((view.left - 32.0f) / tile_width)) - 2);
+            int last_column = min(world_map_width, static_cast<int>(ceil((view.right + 32.0f) / tile_width)) + 1);
+            int first_row = max(0, static_cast<int>(floor((view.top - 32.0f) / tile_height)) - 1);
+            int last_row = min(static_cast<int>(world_row_starts.size()),
+                               static_cast<int>(ceil((view.bottom + 32.0f) / tile_height)) + 1);
+
+            for (int row = first_row; row < last_row; ++row) {
+                size_t row_start = world_row_starts[row];
+                size_t row_end = get_row_end(world_map, world_row_starts, row);
+                for (int column = first_column; column < last_column; ++column) {
+                    size_t index = row_start + static_cast<size_t>(column);
+                    if (index >= row_end) {
+                        continue;
+                    }
+
+                    float location_x = static_cast<float>((column + 1) * tile_width);
+                    float location_y = static_cast<float>(row * tile_height);
+                    if (!IsInView(view, location_x, location_y, tile_width, tile_height)) {
+                        continue;
+                    }
+
+                    int tile_variant = (randomgrass + static_cast<int>(index % 4)) % 4 + 1;
+                    if (world_map[index] == '#') {
+                        draw_grass(location_x, location_y, tile_variant);
+                    } else if (world_map[index] == '%') {
+                        draw_sand(location_x, location_y);
+                    } else if (world_map[index] == '@') {
+                        draw_rock(location_x, location_y);
+                    }
                 }
-                if (world_map[i] == '#'){
-                location_x += grass1.width * tile_scale;
-                if (IsInView(view, location_x, location_y, grass1.width * tile_scale, grass1.height * tile_scale, 32.0f)) {
-                    local_terrain.draw_grass(location_x, location_y, randomgrass);
-                }
-                
             }
-            if (world_map[i] == '%'){
-                location_x += sand.width * tile_scale;
-                if (IsInView(view, location_x, location_y, sand.width * tile_scale, sand.height * tile_scale, 32.0f)) {
-                    local_terrain.draw_sand(location_x, location_y);
-                }
-            }
-            if (world_map[i] == '@'){
-                location_x += rock.width * tile_scale;
-                if (IsInView(view, location_x, location_y, rock.width * tile_scale, rock.height * tile_scale, 32.0f)) {
-                    local_terrain.draw_rock(location_x, location_y);
-                }
-            }
-            if (world_map[i] == '\n'){
-            location_x = 0.0f;
-            location_y += grass1.height * tile_scale;
-            }
-            if (world_map[i] == ' '){
-            location_x += grass1.width * tile_scale;
-            }            
-        }
-        randomgrass = 1;
         }
 };
 
@@ -310,6 +336,8 @@ class railway {
         Texture2D rail_inter = LoadTexture("resources/images/item/rail/rail_inter.png");
         int tile_scale = 5;
         string rail_map = LoadFileText("resources/world/rail_map.txt");
+        vector<size_t> rail_row_starts = get_row_starts(rail_map);
+        int rail_map_width = get_map_width(rail_map, rail_row_starts);
         void draw_rail(float x, float y, char tile){
             
             if (tile == '|'){
@@ -334,26 +362,36 @@ class railway {
                 DrawTexturePro(rail_inter, { 0.0f, 0.0f, (float)rail_inter.width, (float)rail_inter.height }, Rectangle { x, y, (float)rail_inter.width*tile_scale, (float)rail_inter.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
             }
         }
-        void draw_railway(railway local_railway, WorldRect view){
-                    // Draw the rail map
-            float location_x = 0.0f;
-            float location_y = 0.0f;
-            for (size_t i = 0; i < rail_map.length(); ++i) {
-            
-                // TODO: add check for invalid chars
-                if (rail_map[i] == '|' or rail_map[i] == '=' or rail_map[i] == '\\' or rail_map[i] == '/' or rail_map[i] == '>' or rail_map[i] == '<' or rail_map[i] == 'I'){
-                    location_x += rail_ns.width * tile_scale;
-                    if (IsInView(view, location_x, location_y, rail_ns.width * tile_scale, rail_ns.height * tile_scale, 32.0f)) {
-                        local_railway.draw_rail(location_x, location_y, rail_map[i]);
+        void draw_railway(WorldRect view){
+            int tile_width = rail_ns.width * tile_scale;
+            int tile_height = rail_ns.height * tile_scale;
+            int first_column = max(0, static_cast<int>(floor((view.left - 32.0f) / tile_width)) - 2);
+            int last_column = min(rail_map_width, static_cast<int>(ceil((view.right + 32.0f) / tile_width)) + 1);
+            int first_row = max(0, static_cast<int>(floor((view.top - 32.0f) / tile_height)) - 1);
+            int last_row = min(static_cast<int>(rail_row_starts.size()),
+                               static_cast<int>(ceil((view.bottom + 32.0f) / tile_height)) + 1);
+
+            for (int row = first_row; row < last_row; ++row) {
+                size_t row_start = rail_row_starts[row];
+                size_t row_end = get_row_end(rail_map, rail_row_starts, row);
+                for (int column = first_column; column < last_column; ++column) {
+                    size_t index = row_start + static_cast<size_t>(column);
+                    if (index >= row_end) {
+                        continue;
+                    }
+
+                    char tile = rail_map[index];
+                    if (tile != '|' && tile != '=' && tile != '\\' && tile != '/' &&
+                        tile != '>' && tile != '<' && tile != 'I') {
+                        continue;
+                    }
+
+                    float location_x = static_cast<float>((column + 1) * tile_width);
+                    float location_y = static_cast<float>(row * tile_height);
+                    if (IsInView(view, location_x, location_y, tile_width, tile_height)) {
+                        draw_rail(location_x, location_y, tile);
                     }
                 }
-                if (rail_map[i] == '\n'){
-                location_x = 0.0f;
-                    location_y += rail_ns.height * tile_scale;
-                }
-                if (rail_map[i] == ' '){
-                    location_x += rail_ns.width * tile_scale;
-                }            
             }
         }
 };
@@ -365,10 +403,10 @@ class player {
         Texture2D skin = LoadTexture("resources/images/player/Kara/kara-walk.png");
         int anim_frame = 0;
         int facing = -1;
-        float location_x = 7900.0f;
-        float location_y = 8600.0f;
-        int move_speed_x = 2;
-        int move_speed_y = 2;
+        float location_x = 38050.0f;
+        float location_y = 43900.0f;
+        int move_speed_x = 3;
+        int move_speed_y = 3;
         int player_scale = 5;
         
 
@@ -481,10 +519,11 @@ class player {
 
 class cart {
     public:
-        float location_x = 7280.0f;
-        float location_y = 8552.0f;
+        float location_x = 38050.0f;
+        float location_y = 43900.0f;
         float momentum_x = 0.0f;
         float momentum_y = 0.0f;
+        int speed = 7;
         int tile_scale = 5;
         void draw_cart(){
             static Texture2D cart = LoadTexture("resources/images/item/cart/cart.png");
@@ -498,22 +537,22 @@ class cart {
                 local_player.set_location_x(local_cart.location_x);
                 local_player.set_location_y(local_cart.location_y);
                 if (IsKeyDown(KEY_W) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y - 26, rail_map, world_map, tile_scale) == "rail") {
-                    local_cart.location_y -= 5;
+                    local_cart.location_y -= local_cart.speed;
                     local_cart.momentum_y = -5;
                     local_cart.momentum_x = 0;
                 }
                 if (IsKeyDown(KEY_S) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y + 64, rail_map, world_map, tile_scale) == "rail") {
-                    local_cart.location_y += 5;
+                    local_cart.location_y += local_cart.speed;
                     local_cart.momentum_y = 5;
                     local_cart.momentum_x = 0;
                 }
                 if (IsKeyDown(KEY_A) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x - 45, player_center_y, rail_map, world_map, tile_scale) == "rail") {
-                    local_cart.location_x -= 5;
+                    local_cart.location_x -= local_cart.speed;
                     local_cart.momentum_x = -5;
                     local_cart.momentum_y = 0;
                 }
                 if (IsKeyDown(KEY_D) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x + 45, player_center_y, rail_map, world_map, tile_scale) == "rail") {
-                    local_cart.location_x += 5;
+                    local_cart.location_x += local_cart.speed;
                     local_cart.momentum_x = 5;
                     local_cart.momentum_y = 0;
                 }
@@ -624,10 +663,10 @@ int main () {
         WorldRect view = GetCameraWorldBounds(camera, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 
-        local_terrain.draw_terrain(local_terrain, view, randomgrass);
+        local_terrain.draw_terrain(view, randomgrass);
 
 
-        local_railway.draw_railway(local_railway, view);
+        local_railway.draw_railway(view);
 
 
 

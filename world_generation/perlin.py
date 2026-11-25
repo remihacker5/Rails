@@ -124,9 +124,9 @@ def generate_map_file(
 if __name__ == "__main__":
     generate_map_file(
         filename="map.txt",
-        width=200,
-        height=200,
-        scale=18.0,
+        width=1000,
+        height=1000,
+        scale=40.0,
         octaves=4,
         persistence=0.5,
         lacunarity=2.0,
