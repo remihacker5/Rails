@@ -192,15 +192,17 @@ class terrain {
 
 class railway {
     public:
+        Texture2D rail_ns = LoadTexture("resources/images/item/rail/rail_ns.png");
+        Texture2D rail_ew = LoadTexture("resources/images/item/rail/rail_ew.png");
+        Texture2D rail_ne = LoadTexture("resources/images/item/rail/rail_ne.png");
+        Texture2D rail_nw = LoadTexture("resources/images/item/rail/rail_nw.png");
+        Texture2D rail_sw = LoadTexture("resources/images/item/rail/rail_sw.png");
+        Texture2D rail_se = LoadTexture("resources/images/item/rail/rail_se.png");
+        Texture2D rail_inter = LoadTexture("resources/images/item/rail/rail_inter.png");
+        int tile_scale = 5;
+        string rail_map = LoadFileText("resources/world/rail_map.txt");
         void draw_rail(float x, float y, char tile){
-            static Texture2D rail_ns = LoadTexture("resources/images/item/rail/rail_ns.png");
-            static Texture2D rail_ew = LoadTexture("resources/images/item/rail/rail_ew.png");
-            static Texture2D rail_ne = LoadTexture("resources/images/item/rail/rail_ne.png");
-            static Texture2D rail_nw = LoadTexture("resources/images/item/rail/rail_nw.png");
-            static Texture2D rail_sw = LoadTexture("resources/images/item/rail/rail_sw.png");
-            static Texture2D rail_se = LoadTexture("resources/images/item/rail/rail_se.png");
-            static Texture2D rail_inter = LoadTexture("resources/images/item/rail/rail_inter.png");
-            static int tile_scale = 5;
+            
             if (tile == '|'){
                 DrawTexturePro(rail_ns, { 0.0f, 0.0f, (float)rail_ns.width, (float)rail_ns.height }, Rectangle { x, y, (float)rail_ns.width*tile_scale, (float)rail_ns.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
             }
@@ -223,18 +225,27 @@ class railway {
                 DrawTexturePro(rail_inter, { 0.0f, 0.0f, (float)rail_inter.width, (float)rail_inter.height }, Rectangle { x, y, (float)rail_inter.width*tile_scale, (float)rail_inter.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
             }
         }
-};
-
-class cart {
-    public:
-        float location_x = 7280.0f;
-        float location_y = 8552.0f;
-        float momentum_x = 0.0f;
-        float momentum_y = 0.0f;
-        void draw_cart(){
-            static Texture2D cart = LoadTexture("resources/images/item/cart/cart.png");
-            static int tile_scale = 5;
-            DrawTexturePro(cart, { 0.0f, 0.0f, (float)cart.width, (float)cart.height }, Rectangle { location_x, location_y, (float)cart.width*tile_scale, (float)cart.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+        void draw_railway(railway local_railway, WorldRect view){
+                    // Draw the rail map
+            float location_x = 0.0f;
+            float location_y = 0.0f;
+            for (size_t i = 0; i < rail_map.length(); ++i) {
+            
+                // TODO: add check for invalid chars
+                if (rail_map[i] == '|' or rail_map[i] == '=' or rail_map[i] == '\\' or rail_map[i] == '/' or rail_map[i] == '>' or rail_map[i] == '<' or rail_map[i] == 'I'){
+                    location_x += rail_ns.width * tile_scale;
+                    if (IsInView(view, location_x, location_y, rail_ns.width * tile_scale, rail_ns.height * tile_scale, 32.0f)) {
+                        local_railway.draw_rail(location_x, location_y, rail_map[i]);
+                    }
+                }
+                if (rail_map[i] == '\n'){
+                location_x = 0.0f;
+                    location_y += rail_ns.height * tile_scale;
+                }
+                if (rail_map[i] == ' '){
+                    location_x += rail_ns.width * tile_scale;
+                }            
+            }
         }
 };
 
@@ -359,6 +370,91 @@ class player {
         }
 };
 
+class cart {
+    public:
+        float location_x = 7280.0f;
+        float location_y = 8552.0f;
+        float momentum_x = 0.0f;
+        float momentum_y = 0.0f;
+        int tile_scale = 5;
+        void draw_cart(){
+            static Texture2D cart = LoadTexture("resources/images/item/cart/cart.png");
+            DrawTexturePro(cart, { 0.0f, 0.0f, (float)cart.width, (float)cart.height }, Rectangle { location_x, location_y, (float)cart.width*tile_scale, (float)cart.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+        }
+
+        void calculate_momentum(player& local_player, cart& local_cart, const string& rail_map, const string& world_map){
+            float player_center_x = local_player.get_location_x() + (16.0f * 5.0f / 2.0f);
+            float player_center_y = local_player.get_location_y() + (16.0f * 5.0f / 2.0f);
+            if (local_player.in_cart){
+                local_player.set_location_x(local_cart.location_x);
+                local_player.set_location_y(local_cart.location_y);
+                if (IsKeyDown(KEY_W) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y - 26, rail_map, world_map, tile_scale) == "rail") {
+                    local_cart.location_y -= 5;
+                    local_cart.momentum_y = -5;
+                    local_cart.momentum_x = 0;
+                }
+                if (IsKeyDown(KEY_S) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y + 64, rail_map, world_map, tile_scale) == "rail") {
+                    local_cart.location_y += 5;
+                    local_cart.momentum_y = 5;
+                    local_cart.momentum_x = 0;
+                }
+                if (IsKeyDown(KEY_A) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x - 45, player_center_y, rail_map, world_map, tile_scale) == "rail") {
+                    local_cart.location_x -= 5;
+                    local_cart.momentum_x = -5;
+                    local_cart.momentum_y = 0;
+                }
+                if (IsKeyDown(KEY_D) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x + 45, player_center_y, rail_map, world_map, tile_scale) == "rail") {
+                    local_cart.location_x += 5;
+                    local_cart.momentum_x = 5;
+                    local_cart.momentum_y = 0;
+                }
+            }
+
+            // calculate cart momentum
+            if (!(get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x + 45, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x - 45, player_center_y, rail_map, world_map, tile_scale) == "rail")){
+                local_cart.momentum_x = 0;
+            }
+
+            if (!(get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y + 64, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y - 26, rail_map, world_map, tile_scale) == "rail")){
+
+                local_cart.momentum_y = 0;
+            }
+
+            if (!IsKeyDown(KEY_W) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_S) && !IsKeyDown(KEY_D)){
+
+            
+                if (local_cart.momentum_x > 0){
+                    local_cart.momentum_x -= 0.1f;
+                    local_cart.location_x += local_cart.momentum_x;
+                
+                    if (local_cart.momentum_x < 0){
+                        local_cart.momentum_x = 0;
+                    }
+                }
+                if (local_cart.momentum_y > 0){
+                    local_cart.momentum_y -= 0.1f;
+                    local_cart.location_y += local_cart.momentum_y;
+                    if (local_cart.momentum_y < 0){
+                        local_cart.momentum_y = 0;
+                    }
+                }
+                if (local_cart.momentum_x < 0){
+                    local_cart.momentum_x += 0.1f;
+                    local_cart.location_x += local_cart.momentum_x;
+                    if (local_cart.momentum_x > 0){
+                        local_cart.momentum_x = 0;
+                    }
+                }
+                if (local_cart.momentum_y < 0){
+                    local_cart.momentum_y += 0.1f;
+                    local_cart.location_y += local_cart.momentum_y;
+                    if (local_cart.momentum_y > 0){
+                    local_cart.momentum_y = 0;
+                    }
+                }
+            }
+        }
+};
 
 
 /* 
@@ -391,6 +487,7 @@ int main () {
     int tile_scale = 5;
     string world_map = LoadFileText("resources/world/map.txt");
     string rail_map = LoadFileText("resources/world/rail_map.txt");
+    
     int randomgrass = 1;
     Camera2D camera = { 0 };
     player local_player = player();
@@ -423,26 +520,7 @@ int main () {
         local_terrain.draw_terrain(local_terrain, view, randomgrass);
 
 
-        // Draw the rail map
-        float location_x = 0.0f;
-        float location_y = 0.0f;
-        for (size_t i = 0; i < rail_map.length(); ++i) {
-            
-            // TODO: add check for invalid chars
-            if (rail_map[i] == '|' or rail_map[i] == '=' or rail_map[i] == '\\' or rail_map[i] == '/' or rail_map[i] == '>' or rail_map[i] == '<' or rail_map[i] == 'I'){
-                location_x += rail.width * tile_scale;
-                if (IsInView(view, location_x, location_y, rail.width * tile_scale, rail.height * tile_scale, 32.0f)) {
-                    local_railway.draw_rail(location_x, location_y, rail_map[i]);
-                }
-            }
-            if (rail_map[i] == '\n'){
-            location_x = 0.0f;
-            location_y += rail.height * tile_scale;
-            }
-            if (rail_map[i] == ' '){
-            location_x += rail.width * tile_scale;
-            }            
-        }
+        local_railway.draw_railway(local_railway, view);
 
 
 
@@ -450,8 +528,9 @@ int main () {
 
 
         local_player.draw_player(); // Draw the local player character
-        local_cart.draw_cart(); // Draw the cart
+        
         // Handle player movement based on key inputs
+        
         if (IsKeyDown(KEY_W)) {
             local_player.walk(0, -1);
         }
@@ -463,9 +542,11 @@ int main () {
         }
         if (IsKeyDown(KEY_D)) {
             local_player.walk(1, 0);
-        } if (!IsKeyDown(KEY_W) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_S) && !IsKeyDown(KEY_D)) {
+        } 
+        if (!IsKeyDown(KEY_W) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_S) && !IsKeyDown(KEY_D)) {
             local_player.walk(0, 0);
         }
+        
         if (IsKeyPressed(KEY_F1)){
             debug_mode = !debug_mode;
         }
@@ -474,89 +555,19 @@ int main () {
                 local_player.in_cart = !local_player.in_cart;
             }
         }
-        
-        float player_center_x = local_player.get_location_x() + (16.0f * 5.0f / 2.0f);
-        float player_center_y = local_player.get_location_y() + (16.0f * 5.0f / 2.0f);
-        if (local_player.in_cart){
-            local_player.set_location_x(local_cart.location_x);
-            local_player.set_location_y(local_cart.location_y);
-            if (IsKeyDown(KEY_W) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y - 26, rail_map, world_map, tile_scale) == "rail") {
-                local_cart.location_y -= 5;
-                local_cart.momentum_y = -5;
-                local_cart.momentum_x = 0;
-            }
-            if (IsKeyDown(KEY_S) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y + 64, rail_map, world_map, tile_scale) == "rail") {
-                local_cart.location_y += 5;
-                local_cart.momentum_y = 5;
-                local_cart.momentum_x = 0;
-            }
-            if (IsKeyDown(KEY_A) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x - 45, player_center_y, rail_map, world_map, tile_scale) == "rail") {
-                local_cart.location_x -= 5;
-                local_cart.momentum_x = -5;
-                local_cart.momentum_y = 0;
-            }
-            if (IsKeyDown(KEY_D) and get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x + 45, player_center_y, rail_map, world_map, tile_scale) == "rail") {
-                local_cart.location_x += 5;
-                local_cart.momentum_x = 5;
-                local_cart.momentum_y = 0;
-            }
-        }
 
 
-
-
-        // calculate cart momentum
-        if (!(get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x + 45, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x - 45, player_center_y, rail_map, world_map, tile_scale) == "rail")){
-            local_cart.momentum_x = 0;
-        }
-
-        if (!(get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y + 64, rail_map, world_map, tile_scale) == "rail" and get_tile(player_center_x, player_center_y - 26, rail_map, world_map, tile_scale) == "rail")){
-            
-            local_cart.momentum_y = 0;
-        }
-
-        if (!IsKeyDown(KEY_W) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_S) && !IsKeyDown(KEY_D)){
-
-        
-            if (local_cart.momentum_x > 0){
-                local_cart.momentum_x -= 0.1f;
-                local_cart.location_x += local_cart.momentum_x;
-            
-                if (local_cart.momentum_x < 0){
-                    local_cart.momentum_x = 0;
-                }
-            }
-            if (local_cart.momentum_y > 0){
-                local_cart.momentum_y -= 0.1f;
-                local_cart.location_y += local_cart.momentum_y;
-                if (local_cart.momentum_y < 0){
-                    local_cart.momentum_y = 0;
-                }
-            }
-            if (local_cart.momentum_x < 0){
-                local_cart.momentum_x += 0.1f;
-                local_cart.location_x += local_cart.momentum_x;
-                if (local_cart.momentum_x > 0){
-                    local_cart.momentum_x = 0;
-                }
-            }
-            if (local_cart.momentum_y < 0){
-                local_cart.momentum_y += 0.1f;
-                local_cart.location_y += local_cart.momentum_y;
-                if (local_cart.momentum_y > 0){
-                local_cart.momentum_y = 0;
-                }
-            }
-        }
+        local_cart.draw_cart(); // Draw the cart
+        local_cart.calculate_momentum(local_player, local_cart, rail_map, world_map); // calculate the cart's momentum based on player input and rail conditions
 
         camera.target = Vector2{local_player.get_location_x(), local_player.get_location_y()}; // set the camera target to the player's location
-        EndMode2D();
         
+        EndMode2D();
         if (debug_mode){
             DrawText("DEBUG MODE ENABLED", 20, 20, 10, RED);
             DrawText(std::to_string(local_player.get_location_x()).c_str(), 20, 30, 10, WHITE);
             DrawText(std::to_string(local_player.get_location_y()).c_str(), 20, 40, 10, WHITE);
-            DrawText(get_tile(player_center_x, player_center_y, rail_map, world_map, tile_scale).c_str(), 20, 50, 10, WHITE);
+            DrawText(get_tile(local_player.get_location_x(), local_player.get_location_y(), rail_map, world_map, tile_scale).c_str(), 20, 50, 10, WHITE);
         }
          
         EndDrawing();
