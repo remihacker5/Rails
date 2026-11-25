@@ -122,14 +122,15 @@ bool IsInView(const WorldRect& view, float x, float y, float width, float height
 
 class terrain {
     public:
+        Texture2D sand = LoadTexture("resources/images/terrain/sand/sand.png");
+        Texture2D rock = LoadTexture("resources/images/terrain/rock/rock.png");
+        Texture2D grass1 = LoadTexture("resources/images/terrain/grass/grass1.png");
+        Texture2D grass2 = LoadTexture("resources/images/terrain/grass/grass2.png");
+        Texture2D grass3 = LoadTexture("resources/images/terrain/grass/grass3.png");
+        Texture2D grass4 = LoadTexture("resources/images/terrain/grass/grass4.png");
+        int tile_scale = 5;
+        string world_map = LoadFileText("resources/world/map.txt");
         void draw_grass(float x, float y, int randomgrass){
-            static Texture2D grass1 = LoadTexture("resources/images/terrain/grass/grass1.png");
-            static Texture2D grass2 = LoadTexture("resources/images/terrain/grass/grass2.png");
-            static Texture2D grass3 = LoadTexture("resources/images/terrain/grass/grass3.png");
-            static Texture2D grass4 = LoadTexture("resources/images/terrain/grass/grass4.png");
-            static int tile_scale = 5;
-            static string world_map = LoadFileText("resources/world/map.txt");
-    
             if (randomgrass == 1){
                 DrawTexturePro(grass1, { 0.0f, 0.0f, (float)grass1.width, (float)grass1.height }, Rectangle { x, y, (float)grass1.width*tile_scale, (float)grass1.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
         
@@ -144,14 +145,48 @@ class terrain {
             }
         }
         void draw_sand(float x, float y){
-            static Texture2D sand = LoadTexture("resources/images/terrain/sand/sand.png");
-            static int tile_scale = 5;
             DrawTexturePro(sand, { 0.0f, 0.0f, (float)sand.width, (float)sand.height }, Rectangle { x, y, (float)sand.width*tile_scale, (float)sand.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
         }
         void draw_rock(float x, float y){
-            static Texture2D rock = LoadTexture("resources/images/terrain/rock/rock.png");
-            static int tile_scale = 5;
             DrawTexturePro(rock, { 0.0f, 0.0f, (float)rock.width, (float)rock.height }, Rectangle { x, y, (float)rock.width*tile_scale, (float)rock.height*tile_scale }, Vector2 {0, 0}, 0, WHITE);
+        }
+        void draw_terrain(terrain local_terrain, WorldRect view, int randomgrass){
+                    // Draw the world map
+            float location_x = 0.0f;
+            float location_y = 0.0f;
+            for (size_t i = 0; i < world_map.length(); ++i) {
+                randomgrass++;
+                if (randomgrass > 4){
+                    randomgrass = 1;
+                }
+                if (world_map[i] == '#'){
+                location_x += grass1.width * tile_scale;
+                if (IsInView(view, location_x, location_y, grass1.width * tile_scale, grass1.height * tile_scale, 32.0f)) {
+                    local_terrain.draw_grass(location_x, location_y, randomgrass);
+                }
+                
+            }
+            if (world_map[i] == '%'){
+                location_x += sand.width * tile_scale;
+                if (IsInView(view, location_x, location_y, sand.width * tile_scale, sand.height * tile_scale, 32.0f)) {
+                    local_terrain.draw_sand(location_x, location_y);
+                }
+            }
+            if (world_map[i] == '@'){
+                location_x += rock.width * tile_scale;
+                if (IsInView(view, location_x, location_y, rock.width * tile_scale, rock.height * tile_scale, 32.0f)) {
+                    local_terrain.draw_rock(location_x, location_y);
+                }
+            }
+            if (world_map[i] == '\n'){
+            location_x = 0.0f;
+            location_y += grass1.height * tile_scale;
+            }
+            if (world_map[i] == ' '){
+            location_x += grass1.width * tile_scale;
+            }            
+        }
+        randomgrass = 1;
         }
 };
 
@@ -352,23 +387,22 @@ int main () {
     SetTargetFPS(60);
     log("Screen init SUCCESS");
 
-    Texture2D grass1 = LoadTexture("resources/images/terrain/grass/grass1.png");
-    Texture2D sand = LoadTexture("resources/images/terrain/sand/sand.png");
-    Texture2D rock = LoadTexture("resources/images/terrain/rock/rock.png");
     Texture2D rail = LoadTexture("resources/images/item/rail/rail.png");
     int tile_scale = 5;
     string world_map = LoadFileText("resources/world/map.txt");
     string rail_map = LoadFileText("resources/world/rail_map.txt");
     int randomgrass = 1;
-    player local_player = player();
     Camera2D camera = { 0 };
+    player local_player = player();
+    terrain local_terrain = terrain();
+    railway local_railway = railway();
+    cart local_cart = cart();
     camera.target = Vector2{local_player.get_location_x(), local_player.get_location_y()};
     camera.offset = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
-    terrain local_terrain = terrain();
-    railway local_railway = railway();
-    cart local_cart = cart();
+
+    
     while (WindowShouldClose() == false){
         // Refresh the screen size and camera target if the window is resized
         if (IsWindowResized()){
@@ -386,59 +420,12 @@ int main () {
         WorldRect view = GetCameraWorldBounds(camera, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 
-
-
-
-
-
-
-
-
-
-
-        // Draw the world map
-        float location_x = 0.0f;
-        float location_y = 0.0f;
-        for (size_t i = 0; i < world_map.length(); ++i) {
-            randomgrass++;
-            if (randomgrass > 4){
-                randomgrass = 1;
-            }
-            if (world_map[i] == '#'){
-                location_x += grass1.width * tile_scale;
-                if (IsInView(view, location_x, location_y, grass1.width * tile_scale, grass1.height * tile_scale, 32.0f)) {
-                    local_terrain.draw_grass(location_x, location_y, randomgrass);
-                }
-                
-            }
-            if (world_map[i] == '%'){
-                location_x += sand.width * tile_scale;
-                if (IsInView(view, location_x, location_y, sand.width * tile_scale, sand.height * tile_scale, 32.0f)) {
-                    local_terrain.draw_sand(location_x, location_y);
-                }
-            }
-            if (world_map[i] == '@'){
-                location_x += rock.width * tile_scale;
-                if (IsInView(view, location_x, location_y, rock.width * tile_scale, rock.height * tile_scale, 32.0f)) {
-                    local_terrain.draw_rock(location_x, location_y);
-                }
-            }
-            if (world_map[i] == '\n'){
-            location_x = 0.0f;
-            location_y += grass1.height * tile_scale;
-            }
-            if (world_map[i] == ' '){
-            location_x += grass1.width * tile_scale;
-            }            
-        }
-        randomgrass = 1;
-
-
+        local_terrain.draw_terrain(local_terrain, view, randomgrass);
 
 
         // Draw the rail map
-        location_x = 0.0f;
-        location_y = 0.0f;
+        float location_x = 0.0f;
+        float location_y = 0.0f;
         for (size_t i = 0; i < rail_map.length(); ++i) {
             
             // TODO: add check for invalid chars

@@ -9,10 +9,23 @@
 ## 📝 Description
 
 <!-- Add a description of the game here. -->
+Rails is a retro style 2D puzzle sandbox game, where you must explore railways, gather materials, purchase rails, and expand your reach!
 
 ## 🗺️ Roadmap
 
 <!-- Add planned features and development milestones here. -->
+- Placing and removing rails
+- HUD
+- Develop Story
+- NPCs, Structures, objects & entitys
+- Start Menu
+- Pause menu
+- Music
+- Game Art
+- Steam, Epic, GOG, Itch.io release
+- Split-screen multiplayer?
+- Online Multiplayer??
+- MMO ONLINE ANARCHY!!!
 
 ## 🔨 Build from source
 
