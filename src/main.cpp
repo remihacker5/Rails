@@ -79,6 +79,115 @@ string get_tile(float raw_x, float raw_y, const string& rail_map, const string& 
     return "border";
 }
 
+
+string set_tile(float raw_x, float raw_y, string& rail_map, int tile_scale, char new_tile){
+    static Texture2D rail = LoadTexture("resources/images/item/rail/rail.png");
+    int tile_width = rail.width * tile_scale;
+    int tile_height = rail.height * tile_scale;
+
+    int column = static_cast<int>(std::floor(raw_x)) / tile_width - 1;
+    int row = static_cast<int>(std::floor(raw_y)) / tile_height;
+
+    auto is_rail_tile = [](char tile) {
+        return tile == '|' || tile == '=' || tile == '\\' || tile == '/' ||
+               tile == '>' || tile == '<' || tile == 'I';
+    };
+
+    auto set_map_tile = [&](string& map, int column, int row, char value, bool only_existing_rail) -> string {
+        size_t line_start = 0;
+        for (int current_row = 0; current_row < row; ++current_row){
+            size_t newline = map.find('\n', line_start);
+            line_start = newline + 1;
+        }
+
+        size_t index = line_start + static_cast<size_t>(column);
+        if (index >= map.length() || map[index] == '\n'){
+            return map;
+        }
+        if (only_existing_rail && !is_rail_tile(map[index])){
+            return map;
+        }
+        if (value == ' '){
+            map[index] = value;
+            return map;
+        }
+
+        char north_tile = map[index - (map.find('\n', 0) + 1)];
+        char south_tile = map[index + (map.find('\n', 0) + 1)];
+        char east_tile = map[index + 1];
+        char west_tile = map[index - 1];
+        int tile_count = 0;
+        if (north_tile == '=' or north_tile == '|' or north_tile == '\\' or north_tile == '/' or north_tile == '>' or north_tile == '<' or north_tile == 'I'){
+            tile_count++;
+            north_tile = 'r';
+        }
+        if (south_tile == '|' or south_tile == '=' or south_tile == '\\' or south_tile == '/' or south_tile == '>' or south_tile == '<' or south_tile == 'I'){
+            tile_count++;
+            south_tile = 'r';
+        }
+        if (east_tile == '|' or east_tile == '=' or east_tile == '\\' or east_tile == '/' or east_tile == '>' or east_tile == '<' or east_tile == 'I'){
+            tile_count++;
+            east_tile = 'r';
+        }
+        if (west_tile == '|' or west_tile == '=' or west_tile == '\\' or west_tile == '/' or west_tile == '>' or west_tile == '<' or west_tile == 'I'){
+            tile_count++;
+            west_tile = 'r';
+        }
+
+
+        log("North tile: " + string(1, north_tile));
+        log("South tile: " + string(1, south_tile));
+        log("East tile: " + string(1, east_tile));
+        log("West tile: " + string(1, west_tile));
+        log("Tile count: " + std::to_string(tile_count));
+        log("--------------------------------");
+
+        if (tile_count == 4){
+            value = 'I';
+        } else if (tile_count == 3){
+            value = 'I';
+        } else if (tile_count == 2){
+            if ((north_tile == 'r') && (west_tile == 'r')){
+                value = '/';
+            }else if ((north_tile == 'r') && (east_tile == 'r')){
+                value = '\\';
+            } else if ((south_tile == 'r') && (west_tile == 'r')){
+                value = '>';
+            } else if ((south_tile == 'r') && (east_tile == 'r')){
+                value = '<';
+            } else if ((north_tile == 'r') && (south_tile == 'r')){
+                value = '|';
+            } else if ((east_tile == 'r') && (west_tile == 'r')){
+                value = '=';
+            }
+        } else if (tile_count == 1){
+            if (north_tile == 'r'){
+                value = '|';
+            } else if (south_tile == 'r'){
+                value = '|';
+            } else if (east_tile == 'r'){
+                value = '=';
+            } else if (west_tile == 'r'){
+                value = '=';
+            }
+        }
+
+
+        map[index] = value;
+        return map;
+    };
+
+    string new_map = set_map_tile(rail_map, column, row, new_tile, false);
+    if (new_tile == ' '){
+        return new_map;
+    }
+    new_map = set_map_tile(rail_map, column, row - 1, new_tile, true);
+    new_map = set_map_tile(rail_map, column, row + 1, new_tile, true);
+    new_map = set_map_tile(rail_map, column - 1, row, new_tile, true);
+    new_map = set_map_tile(rail_map, column + 1, row, new_tile, true);
+    return new_map;
+}
+
 WorldRect GetCameraWorldBounds(const Camera2D& camera, int screenWidth, int screenHeight) {
     // Handle rotation safely by checking all 4 screen corners
     Vector2 corners[4] = {
@@ -553,10 +662,20 @@ int main () {
                 local_player.in_cart = !local_player.in_cart;
             }
         }
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+            Vector2 mouse_position = GetMousePosition();
+            Vector2 world_position = GetScreenToWorld2D(mouse_position, camera);
+            local_railway.rail_map = set_tile(world_position.x, world_position.y, local_railway.rail_map, tile_scale, '|');
+        }
+        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
+            Vector2 mouse_position = GetMousePosition();
+            Vector2 world_position = GetScreenToWorld2D(mouse_position, camera);
+            local_railway.rail_map = set_tile(world_position.x, world_position.y, local_railway.rail_map, tile_scale, ' ');
+        }
 
 
         local_cart.draw_cart(); // Draw the cart
-        local_cart.calculate_momentum(local_player, local_cart, rail_map, world_map); // calculate the cart's momentum based on player input and rail conditions
+        local_cart.calculate_momentum(local_player, local_cart, local_railway.rail_map, world_map); // calculate the cart's momentum based on player input and rail conditions
 
         camera.target = Vector2{local_player.get_location_x(), local_player.get_location_y()}; // set the camera target to the player's location
         
@@ -565,7 +684,7 @@ int main () {
             DrawText("DEBUG MODE ENABLED", 20, 20, 10, RED);
             DrawText(std::to_string(local_player.get_location_x()).c_str(), 20, 30, 10, WHITE);
             DrawText(std::to_string(local_player.get_location_y()).c_str(), 20, 40, 10, WHITE);
-            DrawText(get_tile(local_player.get_location_x(), local_player.get_location_y(), rail_map, world_map, tile_scale).c_str(), 20, 50, 10, WHITE);
+            DrawText(get_tile(local_player.get_location_x(), local_player.get_location_y(), local_railway.rail_map, world_map, tile_scale).c_str(), 20, 50, 10, WHITE);
         }
          
         EndDrawing();
