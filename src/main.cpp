@@ -394,6 +394,7 @@ class railway {
                 }
             }
         }
+
 };
 
 class player {
@@ -604,7 +605,40 @@ class cart {
         }
 };
 
+class HUD {
+    public:
+        int active_slot = 1;
+        Texture2D toolbar = LoadTexture("resources/images/menu/toolbar.png");
+        Texture2D toolselect = LoadTexture("resources/images/menu/toolselect.png");
+        Texture2D rail = LoadTexture("resources/images/item/rail/rail_ns.png");
+        int hud_scale = 5;
+        vector<string> inventory = {"","","rail",""};
+        vector<int> inventory_count = {0,0,1,0};
+        void draw_toolbar(HUD local_hud){
+            DrawTexturePro(local_hud.toolbar, { 0.0f, 0.0f, (float)local_hud.toolbar.width, (float)local_hud.toolbar.height }, Rectangle { (GetScreenWidth()/2)-((local_hud.toolbar.width*local_hud.hud_scale)/2), GetScreenHeight()-(local_hud.toolbar.height*local_hud.hud_scale) - 5, (float)local_hud.toolbar.width*local_hud.hud_scale, (float)local_hud.toolbar.height*local_hud.hud_scale }, Vector2 {0, 0}, 0, WHITE);
+            for (size_t i = 0; i < inventory.size(); ++i){
+                if (local_hud.inventory_count[i] < 0){
+                    local_hud.inventory_count[i] = 0;
+                }
+                if (local_hud.inventory_count[i] == 0){
+                    local_hud.inventory[i] = "";
+                }
+                if (local_hud.inventory[i] != ""){
+                    if (local_hud.inventory[i] == "rail"){
+                        DrawTexturePro(local_hud.rail, { 0.0f, 0.0f, (float)local_hud.rail.width, (float)local_hud.rail.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.rail.width*local_hud.hud_scale)*i) + 15, GetScreenHeight()-(local_hud.rail.height*local_hud.hud_scale) + 10, (float)local_hud.rail.width*(local_hud.hud_scale-2), (float)local_hud.rail.height*(local_hud.hud_scale-2)}, Vector2 {0, 0}, 0, WHITE);
+                        DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.rail.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.rail.height*local_hud.hud_scale) + 2, 30, WHITE);
+                    }
+                }
+            }
+            
+            DrawTexturePro(local_hud.toolselect, { 0.0f, 0.0f, (float)local_hud.toolselect.width, (float)local_hud.toolselect.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.toolselect.width*local_hud.hud_scale)*local_hud.active_slot)-(local_hud.toolselect.width*local_hud.hud_scale), GetScreenHeight()-(local_hud.toolselect.height*local_hud.hud_scale) - 5, (float)local_hud.toolselect.width*local_hud.hud_scale, (float)local_hud.toolselect.height*local_hud.hud_scale }, Vector2 {0, 0}, 0, WHITE);
 
+        }
+        void draw_HUD(HUD local_HUD){
+            local_HUD.draw_toolbar(local_HUD); 
+        }
+
+};
 /* 
  ██████   ██████            ███            
 ░░██████ ██████            ░░░             
@@ -633,12 +667,13 @@ int main () {
     int tile_scale = 5;
     string world_map = LoadFileText("resources/world/map.txt");
     string rail_map = LoadFileText("resources/world/rail_map.txt");
-    
+    float mousewheel = GetMouseWheelMove();
     int randomgrass = 1;
     Camera2D camera = { 0 };
     player local_player = player();
     terrain local_terrain = terrain();
     railway local_railway = railway();
+    HUD local_hud = HUD();
     cart local_cart = cart();
     camera.target = Vector2{local_player.get_location_x(), local_player.get_location_y()};
     camera.offset = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
@@ -655,6 +690,7 @@ int main () {
             camera.offset = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
         }
         framesCounter++; // Increment the frame counter
+        mousewheel = GetMouseWheelMove();
         BeginDrawing(); // Start drawing the frame
 
         // Clear the background and set up the camera
@@ -704,15 +740,33 @@ int main () {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
             Vector2 mouse_position = GetMousePosition();
             Vector2 world_position = GetScreenToWorld2D(mouse_position, camera);
-            local_railway.rail_map = set_tile(world_position.x, world_position.y, local_railway.rail_map, tile_scale, '|');
+            if (local_hud.inventory_count[2] > 0){
+                local_railway.rail_map = set_tile(world_position.x, world_position.y, local_railway.rail_map, tile_scale, '|');
+                local_hud.inventory_count[2] -= 1;
+            }
+            
         }
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
             Vector2 mouse_position = GetMousePosition();
             Vector2 world_position = GetScreenToWorld2D(mouse_position, camera);
-            local_railway.rail_map = set_tile(world_position.x, world_position.y, local_railway.rail_map, tile_scale, ' ');
+            if (get_tile(world_position.x, world_position.y, local_railway.rail_map, world_map, tile_scale) == "rail"){
+                local_railway.rail_map = set_tile(world_position.x, world_position.y, local_railway.rail_map, tile_scale, ' ');
+                local_hud.inventory_count[2] += 1;
+            }
+            
         }
-
-
+        if (GetMouseWheelMove() != 0.0f && GetMouseWheelMove() < 0.0f){
+            local_hud.active_slot++;
+            if (local_hud.active_slot > 4){
+                local_hud.active_slot = 1;
+            }
+        }
+        if (GetMouseWheelMove() != 0.0f && GetMouseWheelMove() > 0.0f){
+            local_hud.active_slot--;
+            if (local_hud.active_slot < 1){
+                local_hud.active_slot = 4;
+            }
+        }
         local_cart.draw_cart(); // Draw the cart
         local_cart.calculate_momentum(local_player, local_cart, local_railway.rail_map, world_map); // calculate the cart's momentum based on player input and rail conditions
 
@@ -725,8 +779,9 @@ int main () {
             DrawText(std::to_string(local_player.get_location_y()).c_str(), 20, 40, 10, WHITE);
             DrawText(get_tile(local_player.get_location_x(), local_player.get_location_y(), local_railway.rail_map, world_map, tile_scale).c_str(), 20, 50, 10, WHITE);
         }
-         
+        local_hud.draw_HUD(local_hud);
         EndDrawing();
+        
     }
 
     CloseWindow();
