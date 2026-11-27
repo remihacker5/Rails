@@ -611,9 +611,10 @@ class HUD {
         Texture2D toolbar = LoadTexture("resources/images/menu/toolbar.png");
         Texture2D toolselect = LoadTexture("resources/images/menu/toolselect.png");
         Texture2D rail = LoadTexture("resources/images/item/rail/rail_ns.png");
+        Texture2D pickaxe = LoadTexture("resources/images/item/pickaxe/pickaxe.png");
         int hud_scale = 5;
-        vector<string> inventory = {"","","rail",""};
-        vector<int> inventory_count = {0,0,1,0};
+        vector<string> inventory = {"pickaxe","rail","",""};
+        vector<int> inventory_count = {1,10,0,0};
         void draw_toolbar(HUD local_hud){
             DrawTexturePro(local_hud.toolbar, { 0.0f, 0.0f, (float)local_hud.toolbar.width, (float)local_hud.toolbar.height }, Rectangle { (GetScreenWidth()/2)-((local_hud.toolbar.width*local_hud.hud_scale)/2), GetScreenHeight()-(local_hud.toolbar.height*local_hud.hud_scale) - 5, (float)local_hud.toolbar.width*local_hud.hud_scale, (float)local_hud.toolbar.height*local_hud.hud_scale }, Vector2 {0, 0}, 0, WHITE);
             for (size_t i = 0; i < inventory.size(); ++i){
@@ -626,16 +627,40 @@ class HUD {
                 if (local_hud.inventory[i] != ""){
                     if (local_hud.inventory[i] == "rail"){
                         DrawTexturePro(local_hud.rail, { 0.0f, 0.0f, (float)local_hud.rail.width, (float)local_hud.rail.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.rail.width*local_hud.hud_scale)*i) + 15, GetScreenHeight()-(local_hud.rail.height*local_hud.hud_scale) + 10, (float)local_hud.rail.width*(local_hud.hud_scale-2), (float)local_hud.rail.height*(local_hud.hud_scale-2)}, Vector2 {0, 0}, 0, WHITE);
-                        DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.rail.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.rail.height*local_hud.hud_scale) + 2, 30, WHITE);
+                        if (local_hud.inventory_count[i] > 1){
+                            DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.rail.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.rail.height*local_hud.hud_scale) + 2, 30, WHITE);
+                        }
                     }
+                    if (local_hud.inventory[i] == "pickaxe"){
+                        DrawTexturePro(local_hud.pickaxe, { 0.0f, 0.0f, (float)local_hud.pickaxe.width, (float)local_hud.pickaxe.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.pickaxe.width*local_hud.hud_scale)*i) + 15, GetScreenHeight()-(local_hud.pickaxe.height*local_hud.hud_scale) + 10, (float)local_hud.pickaxe.width*(local_hud.hud_scale-2), (float)local_hud.pickaxe.height*(local_hud.hud_scale-2)}, Vector2 {0, 0}, 0, WHITE);
+                        if (local_hud.inventory_count[i] > 1){
+                            DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.pickaxe.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.pickaxe.height*local_hud.hud_scale) + 2, 30, WHITE);
+                        }
+                    }
+                    
                 }
             }
             
             DrawTexturePro(local_hud.toolselect, { 0.0f, 0.0f, (float)local_hud.toolselect.width, (float)local_hud.toolselect.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.toolselect.width*local_hud.hud_scale)*local_hud.active_slot)-(local_hud.toolselect.width*local_hud.hud_scale), GetScreenHeight()-(local_hud.toolselect.height*local_hud.hud_scale) - 5, (float)local_hud.toolselect.width*local_hud.hud_scale, (float)local_hud.toolselect.height*local_hud.hud_scale }, Vector2 {0, 0}, 0, WHITE);
 
         }
+        void set_mouse(HUD local_hud){
+            if (local_hud.inventory[active_slot-1] == "rail"){
+                HideCursor();
+                DrawTexturePro(local_hud.rail, { 0.0f, 0.0f, (float)local_hud.rail.width, (float)local_hud.rail.height }, Rectangle { GetMousePosition().x, GetMousePosition().y, (float)local_hud.toolselect.width, (float)local_hud.toolselect.height}, Vector2 {0, 0}, 0, WHITE);
+            }
+            if (local_hud.inventory[active_slot-1] == "pickaxe"){
+                HideCursor();
+                DrawTexturePro(local_hud.pickaxe, { 0.0f, 0.0f, (float)local_hud.pickaxe.width, (float)local_hud.pickaxe.height }, Rectangle { GetMousePosition().x, GetMousePosition().y, (float)local_hud.toolselect.width, (float)local_hud.toolselect.height}, Vector2 {0, 0}, 0, WHITE);
+            }
+            if (local_hud.inventory[active_slot-1] == ""){
+                ShowCursor();
+            }
+        }
+
         void draw_HUD(HUD local_HUD){
             local_HUD.draw_toolbar(local_HUD); 
+            local_HUD.set_mouse(local_HUD);
         }
 
 };
@@ -740,18 +765,22 @@ int main () {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
             Vector2 mouse_position = GetMousePosition();
             Vector2 world_position = GetScreenToWorld2D(mouse_position, camera);
-            if (local_hud.inventory_count[2] > 0){
+            if (local_hud.inventory[local_hud.active_slot-1] == "rail" && local_hud.inventory_count[local_hud.active_slot-1] > 0 && get_tile(world_position.x, world_position.y, local_railway.rail_map, world_map, tile_scale) != "rail"){
                 local_railway.rail_map = set_tile(world_position.x, world_position.y, local_railway.rail_map, tile_scale, '|');
-                local_hud.inventory_count[2] -= 1;
+                local_hud.inventory_count[local_hud.active_slot-1] -= 1;
+                if(local_hud.inventory_count[local_hud.active_slot-1] == 0){
+                    local_hud.inventory[local_hud.active_slot-1] = "";
+                }
             }
             
         }
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
             Vector2 mouse_position = GetMousePosition();
             Vector2 world_position = GetScreenToWorld2D(mouse_position, camera);
-            if (get_tile(world_position.x, world_position.y, local_railway.rail_map, world_map, tile_scale) == "rail"){
+            if (get_tile(world_position.x, world_position.y, local_railway.rail_map, world_map, tile_scale) == "rail" && (local_hud.inventory[local_hud.active_slot-1] == "rail" or local_hud.inventory[local_hud.active_slot-1] == "")){
                 local_railway.rail_map = set_tile(world_position.x, world_position.y, local_railway.rail_map, tile_scale, ' ');
-                local_hud.inventory_count[2] += 1;
+                local_hud.inventory_count[local_hud.active_slot-1] += 1;
+                local_hud.inventory[local_hud.active_slot-1] = "rail";
             }
             
         }
