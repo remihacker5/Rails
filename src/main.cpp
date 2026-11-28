@@ -895,7 +895,7 @@ int main () {
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
             Vector2 mouse_position = GetMousePosition();
             Vector2 world_position = GetScreenToWorld2D(mouse_position, camera);
-            if (local_hud.inventory[local_hud.active_slot-1] == "pickaxe" && get_tile(world_position.x, world_position.y, local_railway.rail_map, world_map, tile_scale) != "rock"){
+            if (local_hud.inventory[local_hud.active_slot-1] == "pickaxe" && get_tile(world_position.x, world_position.y, local_railway.rail_map, world_map, tile_scale) == "rock"){
                 local_hud.mine(local_hud);
                 local_hud.play_mining_animation(world_position.x, world_position.y);
             }
