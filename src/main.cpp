@@ -18,6 +18,7 @@
 #include <iostream>
 #include <raylib.h>
 #include <vector>
+#include <algorithm>
 using namespace std;
 
 void log(string msg){
@@ -612,9 +613,16 @@ class HUD {
         Texture2D toolselect = LoadTexture("resources/images/menu/toolselect.png");
         Texture2D rail = LoadTexture("resources/images/item/rail/rail_ns.png");
         Texture2D pickaxe = LoadTexture("resources/images/item/pickaxe/pickaxe.png");
+        Texture2D Black_gem = LoadTexture("resources/images/item/gem/black_gem.png");
+        Texture2D White_gem = LoadTexture("resources/images/item/gem/white_gem.png");
+        Texture2D Blue_gem = LoadTexture("resources/images/item/gem/blue_gem.png");
+        Texture2D Red_gem = LoadTexture("resources/images/item/gem/red_gem.png");
+        Texture2D Green_gem = LoadTexture("resources/images/item/gem/green_gem.png");
+        Texture2D mining_anim = LoadTexture("resources/images/item/pickaxe/mining.png");
         int hud_scale = 5;
-        vector<string> inventory = {"pickaxe","rail","",""};
-        vector<int> inventory_count = {1,10,0,0};
+        int anim_frame = 1;
+        vector<string> inventory = {"pickaxe","rail","","","","",""};
+        vector<int> inventory_count = {1,10,0,0,0,0,0};
         void draw_toolbar(HUD local_hud){
             DrawTexturePro(local_hud.toolbar, { 0.0f, 0.0f, (float)local_hud.toolbar.width, (float)local_hud.toolbar.height }, Rectangle { (GetScreenWidth()/2)-((local_hud.toolbar.width*local_hud.hud_scale)/2), GetScreenHeight()-(local_hud.toolbar.height*local_hud.hud_scale) - 5, (float)local_hud.toolbar.width*local_hud.hud_scale, (float)local_hud.toolbar.height*local_hud.hud_scale }, Vector2 {0, 0}, 0, WHITE);
             for (size_t i = 0; i < inventory.size(); ++i){
@@ -637,6 +645,37 @@ class HUD {
                             DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.pickaxe.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.pickaxe.height*local_hud.hud_scale) + 2, 30, WHITE);
                         }
                     }
+                    if (local_hud.inventory[i] == "Black Gem"){
+                        DrawTexturePro(local_hud.Black_gem, { 0.0f, 0.0f, (float)local_hud.Black_gem.width, (float)local_hud.Black_gem.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.Black_gem.width*local_hud.hud_scale)*i) + 15, GetScreenHeight()-(local_hud.Black_gem.height*local_hud.hud_scale) + 10, (float)local_hud.Black_gem.width*(local_hud.hud_scale-2), (float)local_hud.Black_gem.height*(local_hud.hud_scale-2)}, Vector2 {0, 0}, 0, WHITE);
+                        if (local_hud.inventory_count[i] > 1){
+                            DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.Black_gem.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.Black_gem.height*local_hud.hud_scale) + 2, 30, WHITE);
+                        }
+                    }
+                    if (local_hud.inventory[i] == "White Gem"){
+                        DrawTexturePro(local_hud.White_gem, { 0.0f, 0.0f, (float)local_hud.White_gem.width, (float)local_hud.White_gem.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.White_gem.width*local_hud.hud_scale)*i) + 15, GetScreenHeight()-(local_hud.White_gem.height*local_hud.hud_scale) + 10, (float)local_hud.White_gem.width*(local_hud.hud_scale-2), (float)local_hud.White_gem.height*(local_hud.hud_scale-2)}, Vector2 {0, 0}, 0, WHITE);
+                        if (local_hud.inventory_count[i] > 1){
+                            DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.White_gem.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.White_gem.height*local_hud.hud_scale) + 2, 30, WHITE);
+                        }
+                    }
+                    if (local_hud.inventory[i] == "Blue Gem"){
+                        DrawTexturePro(local_hud.Blue_gem, { 0.0f, 0.0f, (float)local_hud.Blue_gem.width, (float)local_hud.Blue_gem.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.Blue_gem.width*local_hud.hud_scale)*i) + 15, GetScreenHeight()-(local_hud.Blue_gem.height*local_hud.hud_scale) + 10, (float)local_hud.Blue_gem.width*(local_hud.hud_scale-2), (float)local_hud.Blue_gem.height*(local_hud.hud_scale-2)}, Vector2 {0, 0}, 0, WHITE);
+                        if (local_hud.inventory_count[i] > 1){
+                            DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.Blue_gem.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.Blue_gem.height*local_hud.hud_scale) + 2, 30, WHITE);
+                        }
+                    }
+                    if (local_hud.inventory[i] == "Red Gem"){
+                        DrawTexturePro(local_hud.Red_gem, { 0.0f, 0.0f, (float)local_hud.Red_gem.width, (float)local_hud.Red_gem.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.Red_gem.width*local_hud.hud_scale)*i) + 15, GetScreenHeight()-(local_hud.Red_gem.height*local_hud.hud_scale) + 10, (float)local_hud.Red_gem.width*(local_hud.hud_scale-2), (float)local_hud.Red_gem.height*(local_hud.hud_scale-2)}, Vector2 {0, 0}, 0, WHITE);
+                        if (local_hud.inventory_count[i] > 1){
+                            DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.Red_gem.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.Red_gem.height*local_hud.hud_scale) + 2, 30, WHITE);
+                        }
+                    }
+                    if (local_hud.inventory[i] == "Green Gem"){
+                        DrawTexturePro(local_hud.Green_gem, { 0.0f, 0.0f, (float)local_hud.Green_gem.width, (float)local_hud.Green_gem.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.Green_gem.width*local_hud.hud_scale)*i) + 15, GetScreenHeight()-(local_hud.Green_gem.height*local_hud.hud_scale) + 10, (float)local_hud.Green_gem.width*(local_hud.hud_scale-2), (float)local_hud.Green_gem.height*(local_hud.hud_scale-2)}, Vector2 {0, 0}, 0, WHITE);
+                        if (local_hud.inventory_count[i] > 1){
+                            DrawText(std::to_string(local_hud.inventory_count[i]).c_str(), (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.Green_gem.width*local_hud.hud_scale)*i) + 10, GetScreenHeight()-(local_hud.Green_gem.height*local_hud.hud_scale) + 2, 30, WHITE);
+                        }
+                    }
+                    
                     
                 }
             }
@@ -644,24 +683,94 @@ class HUD {
             DrawTexturePro(local_hud.toolselect, { 0.0f, 0.0f, (float)local_hud.toolselect.width, (float)local_hud.toolselect.height }, Rectangle { (GetScreenWidth()/2)-(((local_hud.toolbar.width*local_hud.hud_scale)/2)-5)+((local_hud.toolselect.width*local_hud.hud_scale)*local_hud.active_slot)-(local_hud.toolselect.width*local_hud.hud_scale), GetScreenHeight()-(local_hud.toolselect.height*local_hud.hud_scale) - 5, (float)local_hud.toolselect.width*local_hud.hud_scale, (float)local_hud.toolselect.height*local_hud.hud_scale }, Vector2 {0, 0}, 0, WHITE);
 
         }
+
+        void play_mining_animation(int x,int y) {
+            
+                // Play the walking animation for the player character to the right
+                static int frames = 0;
+                frames++;
+
+                if (anim_frame == 0 && frames == 35){
+                    frames = 0;
+                    anim_frame = 1;
+                } 
+                else if (anim_frame == 1 && frames == 35){
+                    frames = 0;
+                    anim_frame = 2;
+                }
+                else if (anim_frame == 2 && frames == 35){
+                    frames = 0;
+                    anim_frame = 3;
+                }
+                else if (anim_frame == 3 && frames == 35){
+                    frames = 0;
+                    anim_frame = 0;
+                }
+                DrawTexturePro(mining_anim, { (float)mining_anim.width/4*anim_frame, 0.0f, (float)mining_anim.width/4, (float)mining_anim.height }, Rectangle { x - (float)mining_anim.width/2, y - (float)mining_anim.height*2, (float)mining_anim.width/4*hud_scale, (float)mining_anim.height*hud_scale }, Vector2 {0, 0}, 0, WHITE);
+        }
+
+        void mine(HUD& local_hud){
+            static int startframe = 0;
+            int mine_result = floor(GetRandomValue(1, 80));  
+            startframe += 1;
+            
+            if (120 <= startframe){
+                    // Search an element 22
+                auto empty_slot = find(local_hud.inventory.begin(), local_hud.inventory.end(), "");
+  	                // Check if element is present
+              	if (empty_slot != local_hud.inventory.end()){
+    	                // Print index
+                    int index = distance(local_hud.inventory.begin(), empty_slot);
+                    if (mine_result == 1){
+                        local_hud.inventory[index] = "Black Gem";
+                        local_hud.inventory_count[index] += 1;
+                        startframe = 0;
+                    }
+                    if (mine_result > 1 && mine_result <= 10){
+                        local_hud.inventory[index] = "White Gem";
+                        local_hud.inventory_count[index] += 1;
+                        startframe = 0;
+                    }
+                    if (mine_result > 10 && mine_result <= 20){
+                        local_hud.inventory[index] = "Blue Gem";
+                        local_hud.inventory_count[index] += 1;
+                        startframe = 0;
+                    }
+                    if (mine_result > 20 && mine_result <= 30){
+                        local_hud.inventory[index] = "Red Gem";
+                        local_hud.inventory_count[index] += 1;
+                        startframe = 0;
+                    }
+                    if (mine_result > 30 && mine_result <= 40){
+                        local_hud.inventory[index] = "Green Gem";
+                        local_hud.inventory_count[index] += 1;
+                        startframe = 0;
+                    }
+                }
+                else{
+                    cout << "Not enough space in inventory, tell player.";
+                }
+                
+            }
+        }
         void set_mouse(HUD local_hud){
             if (local_hud.inventory[active_slot-1] == "rail"){
                 HideCursor();
                 DrawTexturePro(local_hud.rail, { 0.0f, 0.0f, (float)local_hud.rail.width, (float)local_hud.rail.height }, Rectangle { GetMousePosition().x, GetMousePosition().y, (float)local_hud.toolselect.width, (float)local_hud.toolselect.height}, Vector2 {0, 0}, 0, WHITE);
             }
-            if (local_hud.inventory[active_slot-1] == "pickaxe"){
+            else if (local_hud.inventory[active_slot-1] == "pickaxe"){
                 HideCursor();
                 DrawTexturePro(local_hud.pickaxe, { 0.0f, 0.0f, (float)local_hud.pickaxe.width, (float)local_hud.pickaxe.height }, Rectangle { GetMousePosition().x, GetMousePosition().y, (float)local_hud.toolselect.width, (float)local_hud.toolselect.height}, Vector2 {0, 0}, 0, WHITE);
             }
-            if (local_hud.inventory[active_slot-1] == ""){
+            else {
                 ShowCursor();
             }
         }
-
         void draw_HUD(HUD local_HUD){
             local_HUD.draw_toolbar(local_HUD); 
             local_HUD.set_mouse(local_HUD);
         }
+        
 
 };
 /* 
@@ -772,28 +881,35 @@ int main () {
                     local_hud.inventory[local_hud.active_slot-1] = "";
                 }
             }
-            
         }
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
             Vector2 mouse_position = GetMousePosition();
             Vector2 world_position = GetScreenToWorld2D(mouse_position, camera);
-            if (get_tile(world_position.x, world_position.y, local_railway.rail_map, world_map, tile_scale) == "rail" && (local_hud.inventory[local_hud.active_slot-1] == "rail" or local_hud.inventory[local_hud.active_slot-1] == "")){
+            if (get_tile(world_position.x, world_position.y, local_railway.rail_map, local_terrain.world_map, tile_scale) == "rail" && (local_hud.inventory[local_hud.active_slot-1] == "rail" or local_hud.inventory[local_hud.active_slot-1] == "")){
                 local_railway.rail_map = set_tile(world_position.x, world_position.y, local_railway.rail_map, tile_scale, ' ');
                 local_hud.inventory_count[local_hud.active_slot-1] += 1;
                 local_hud.inventory[local_hud.active_slot-1] = "rail";
             }
             
         }
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
+            Vector2 mouse_position = GetMousePosition();
+            Vector2 world_position = GetScreenToWorld2D(mouse_position, camera);
+            if (local_hud.inventory[local_hud.active_slot-1] == "pickaxe" && get_tile(world_position.x, world_position.y, local_railway.rail_map, world_map, tile_scale) != "rock"){
+                local_hud.mine(local_hud);
+                local_hud.play_mining_animation(world_position.x, world_position.y);
+            }
+        }
         if (GetMouseWheelMove() != 0.0f && GetMouseWheelMove() < 0.0f){
             local_hud.active_slot++;
-            if (local_hud.active_slot > 4){
+            if (local_hud.active_slot > local_hud.inventory.size()){
                 local_hud.active_slot = 1;
             }
         }
         if (GetMouseWheelMove() != 0.0f && GetMouseWheelMove() > 0.0f){
             local_hud.active_slot--;
             if (local_hud.active_slot < 1){
-                local_hud.active_slot = 4;
+                local_hud.active_slot = local_hud.inventory.size();
             }
         }
         local_cart.draw_cart(); // Draw the cart
